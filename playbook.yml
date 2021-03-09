@@ -1,0 +1,80 @@
+---
+- name: "Laboratorio de Variables"
+  hosts: nodos
+  vars:
+    servicios:
+      - firewalld
+      - httpd
+      - mariadb
+      - sshd
+    grupos:
+      - ctic
+      - devops
+      - everis
+
+  vars_files:
+    default.yml
+  tasks:
+    - name: "Mensaje por pantalla"
+      debug:
+          msg: "Instalaciones varias"
+    - name: "Instalar paquetes"
+      yum:
+        name: "{{ paquetes }}"
+        state: present
+        update_cache: True
+      with_items: "{{ paquetes }}"
+    - name: "Arrancar servicios"
+      service:
+        name: "{{ item }}"
+        state: started
+      loop: "{{ servicios }}"
+    - name: "Habilitar servicios"
+      service:
+        name: "{{ item }}"
+        enabled:  yes
+      loop: "{{ servicios }}"
+    - name: "Reiniciar servicios"
+      service:
+        name: "{{ item }}"
+        state: restarted
+      loop: "{{ servicios }}"
+    - name: "Renicia nodos"
+      reboot:
+    - name: "Creacion de usuario administrador"
+      user:
+        name: administrador
+        groups: "{{ usuarios['administrador']['grupo'] }}"
+        generate_ssh_key: "{{ usuarios['administrador']['generar_key'] }}"
+        ssh_key_bits: 2048
+        ssh_key_file: "{{ usuarios['administrador']['ruta_key'] }}"
+        expires: "{{ usuarios['administrador']['expira'] }}"
+
+    - name: "Creacion del usuario everis_prueba"
+      user:
+        name: everis_prueba
+        groups: "{{ usuarios['everis_prueba']['grupo'] }}"
+        generate_ssh_key: "{{ usuarios['everis_prueba']['generar_key'] }}"
+        uid: "{{ usuarios['everis_prueba']['identificador'] }}"
+        expires: "{{ usuarios['everis_prueba']['expira'] }}"
+
+    - name: "Creacion usuario nuestro"
+      user:
+        name: nuestro            
+        groups: "{{ usuarios['nuestro']['grupo'] }}"   
+        generate_ssh_key: "{{ usuarios['nuestro']['generar_key'] }}"
+        ssh_key_bits: 2048
+        ssh_key_file: "{{ usuarios['nuestro']['ruta_key'] }}"        
+        expires: "{{ usuarios['nuestro']['expira'] }}"
+
+- name: "Creación de grupos de sistema"
+  hosts: nodos
+  tasks:
+    - name: Crear grupos de sistema
+      ansible.builtin.group:
+        name: "{{ item }}"
+        state: present
+        system: true
+      with_items: "{{ grupos }}"
+
+...
